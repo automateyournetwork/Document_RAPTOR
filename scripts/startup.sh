@@ -1,0 +1,2 @@
+cd Document_RAPTOR
+streamlit run document_RAPTOR.py
