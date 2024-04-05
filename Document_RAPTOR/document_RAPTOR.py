@@ -40,6 +40,9 @@ FILE_LOADERS = {
 
 ACCEPTED_FILE_TYPES = list(FILE_LOADERS)
 
+with st.spinner("Downloading Instructor XL Embeddings Model locally....please be patient"):
+    embedding_model=HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-large", model_kwargs={"device": "cuda"})
+
 # Message classes
 class Message:
     def __init__(self, content):
@@ -59,8 +62,6 @@ class ChatWithDocuments:
         self.file_path = file_path
         self.file_type = file_type
         self.load_document()
-        with st.spinner("Downloading Instructor XL Embeddings Model locally....please be patient"):
-            self.embedding_model=HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-large", model_kwargs={"device": "cuda"})
         self.llm = Ollama(model=st.session_state['selected_model'], base_url="http://ollama:11434")
         self.document_cluster_mapping = {}
         self.conversation_history = []
@@ -77,7 +78,7 @@ class ChatWithDocuments:
         self.pages = self.loader.load_and_split()
 
     def split_into_chunks(self):
-        self.text_splitter = SemanticChunker(self.embedding_model)
+        self.text_splitter = SemanticChunker(embedding_model)
         self.docs = self.text_splitter.split_documents(self.pages)
 
     def create_leaf_nodes(self):
@@ -88,7 +89,7 @@ class ChatWithDocuments:
     def embed_leaf_nodes(self):
         for leaf_node in self.leaf_nodes:
             try:
-                embedding = self.embedding_model.embed_query(leaf_node.text)
+                embedding = embedding_model.embed_query(leaf_node.text)
                 if embedding is not None and not np.isnan(embedding).any():
                     leaf_node.embedding = embedding
                 else:
@@ -140,7 +141,7 @@ class ChatWithDocuments:
 
         # Generate a summary for the combined text using the LLM
         summary = self.invoke_summary_generation(combined_text)
-        summary_embedding = self.embedding_model.embed_query(summary)
+        summary_embedding = embedding_model.embed_query(summary)
         return summary
 
     def recursive_cluster_summarize(self, nodes, depth=0, n_clusters=None):
@@ -169,7 +170,7 @@ class ChatWithDocuments:
         n_clusters = self.determine_initial_clusters(self.leaf_nodes)
         # Begin recursive clustering and summarization
         self.recursive_cluster_summarize(self.leaf_nodes, n_clusters=n_clusters)
-        root_summary_embedding = self.embedding_model.embed_query(self.root_node.text)
+        root_summary_embedding = embedding_model.embed_query(self.root_node.text)
 
     def store_in_chroma(self):
         st.write("Storing in Chroma")
@@ -194,7 +195,7 @@ class ChatWithDocuments:
         combined_texts = all_texts + all_summaries
         # Now, use all_texts to build the vectorstore with Chroma
         
-        self.vectordb = Chroma.from_texts(texts=combined_texts, embedding=self.embedding_model)
+        self.vectordb = Chroma.from_texts(texts=combined_texts, embedding=embedding_model)
 
     def setup_conversation_memory(self):
         self.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
@@ -258,8 +259,8 @@ class ChatWithDocuments:
             return relevant_clusters
 
         # Calculate the similarity between the question and the cluster's summary
-        question_embedding = self.embedding_model.embed_query(question)
-        cluster_summary_embedding = self.embedding_model.embed_query(node.text)  # Assuming node.text holds the cluster summary
+        question_embedding = embedding_model.embed_query(question)
+        cluster_summary_embedding = embedding_model.embed_query(node.text)  # Assuming node.text holds the cluster summary
         similarity_score = self.calculate_similarity(question_embedding, cluster_summary_embedding)
 
         # If the similarity score is above the threshold, this cluster is relevant
@@ -347,18 +348,16 @@ class ChatWithDocuments:
 
     def create_tree_graph(self):
         def add_nodes_recursively(graph, node, parent_name=None):
-            # Create a unique name for the node
             node_name = f"{node.text[:10]}..." if node.text else "Root"
             graph.add_node(node_name)
-
-            # Link the node to its parent if it exists
+    
             if parent_name:
                 graph.add_edge(parent_name, node_name)
-
+    
             for child in node.children:
                 add_nodes_recursively(graph, child, node_name)
-
-        G = nx.Graph()
+    
+        G = nx.DiGraph()  # Use Directed Graph
         add_nodes_recursively(G, self.root_node)
         return G
 
