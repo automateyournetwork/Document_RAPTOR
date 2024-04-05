@@ -3,6 +3,7 @@ import json
 import pathlib
 import requests
 import numpy as np
+import pandas as pd
 import networkx as nx
 import streamlit as st
 from pyvis.network import Network
@@ -215,53 +216,10 @@ class ChatWithDocuments:
         return bics.index(min(bics)) + 1
 
     def chat(self, question):
-        # Dynamically generate priming text based on the question by finding relevant nodes
-        st.write("getting revelant nodes")
-        relevant_nodes = self.retrieve_relevant_documents_from_tree(question, self.root_node)
-        st.write("priming text")
-        priming_text = self.generate_priming_text_from_nodes(relevant_nodes)
-
-        # Combine the original question with the dynamic priming text
-        primed_question = priming_text + "\n\n" + question
-
         st.write("gnerating response")
-        response = self.qa.invoke(primed_question)
+        response = self.qa.invoke(question)
         self.conversation_history.append({"You": question, "AI": response}) 
         return response
-
-    def retrieve_relevant_documents_from_tree(self, question, node, threshold=0.5):
-        # Check if we have reached a leaf node and decide its relevance
-        if node.is_leaf():
-            # Calculate the similarity score between the question and the node's text
-            question_embedding = self.embedding_model.embed_query(question)
-            similarity_score = self.calculate_similarity(question_embedding, node.embedding)
-
-            # If the similarity score is above a certain threshold, it's relevant
-            if similarity_score > threshold:
-                return [node]
-            else:
-                return []
-
-        # Not a leaf, we need to decide which children are relevant
-        relevant_docs = []
-        for child_node in node.children:
-            relevant_docs.extend(self.retrieve_relevant_documents_from_tree(question, child_node, threshold))
-
-        return relevant_docs
-
-    def calculate_similarity(self, embedding1, embedding2):
-        # Ensure both embeddings are 2D arrays for the cosine_similarity function
-        embedding1 = np.array(embedding1).reshape(1, -1)
-        embedding2 = np.array(embedding2).reshape(1, -1)
-
-        # Calculate cosine similarity between the two embeddings
-        st.write("Cosine Similarity:", cosine_similarity(embedding1, embedding2)[0][0])
-        return cosine_similarity(embedding1, embedding2)[0][0]
-
-    def generate_priming_text_from_nodes(self, nodes):
-        # Combine text from relevant nodes into a single string to serve as priming text
-        combined_text = " ".join([node.text for node in nodes])
-        return combined_text  
 
     def update_conversation_history(self, question, response, relevant_nodes):
         # Store the question, response, and the paths through the tree that led to the response
@@ -321,24 +279,6 @@ class ChatWithDocuments:
             # Assuming `cluster.documents` holds the IDs of documents in this cluster
             document_ids.extend(cluster.documents)
         return document_ids
-
-    def generate_dynamic_priming_text(self, question):
-        """
-        Generate dynamic priming text based on the question by summarizing relevant clusters.
-        This replaces the static approach with one that adapts to the user's query.
-        """
-        # Make sure the tree is built and root_node is set before retrieving documents
-        if self.root_node is None:
-            st.write("Error: Root node is not set. Cannot retrieve documents without a starting node.")
-            return ""
-
-        # Call the method with both required arguments
-        relevant_docs = self.retrieve_relevant_documents_from_tree(question, self.root_node)
-        relevant_clusters = self.identify_relevant_clusters(relevant_docs)
-        summaries = self.generate_summaries(relevant_clusters)
-
-        # Combine summaries into a single priming text
-        return " ".join(summaries.values())
 
     def prepare_clustered_data(self, clusters=None):
         """
