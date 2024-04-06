@@ -342,7 +342,6 @@ class ChatWithDocuments:
             else:
                 st.write("No response received for: ", query_text)        
 
-
         # After gathering all results, let's ask the LLM to synthesize a comprehensive answer
         if all_results:
             synthesis_prompt = self.create_synthesis_prompt(question, all_results)
