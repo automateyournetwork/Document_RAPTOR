@@ -44,6 +44,9 @@ RUN echo "==> Adding docx2txt ..." \
 RUN echo "==> Adding python-pptx ..." \
   && pip install python-pptx
 
+RUN echo "==> Adding openpyxl ..." \
+  && pip install openpyxl
+
 COPY /Document_RAPTOR /Document_RAPTOR/
 COPY /scripts /scripts/
 
