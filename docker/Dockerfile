@@ -15,37 +15,37 @@ RUN echo "==> Install dos2unix..." \
   && sudo apt-get install dos2unix -y 
 
 RUN echo "==> Install langchain requirements.." \
-  && pip install -U --quiet langchain_experimental langchain langchain-community \
-  && pip install chromadb \
-  && pip install tiktoken
+  && pip install --break-system-packages -U --quiet langchain_experimental langchain langchain-community \
+  && pip install --break-system-packages chromadb \
+  && pip install --break-system-packages tiktoken
 
 RUN echo "==> Install streamlit.." \
-  && pip install streamlit --upgrade
+  && pip install --break-system-packages streamlit --upgrade
 
 RUN echo "==> Adding InstructorEmbedding ..." \
-  && pip install -U sentence-transformers==2.2.2 \
-  && pip install InstructorEmbedding
+  && pip install --break-system-packages -U sentence-transformers==2.2.2 \
+  && pip install --break-system-packages InstructorEmbedding
 
 RUN echo "==> Adding networkx ..." \
-  && pip install networkx
+  && pip install --break-system-packages networkx
 
 RUN echo "==> Adding pyvis ..." \
-  && pip install pyvis
+  && pip install--break-system-packages pyvis
 
 RUN echo "==> Adding pymupdf ..." \
-  && pip install pymupdf
+  && pip install --break-system-packages pymupdf
 
 RUN echo "==> Adding unstructured ..." \
-  && pip install unstructured
+  && pip install --break-system-packages unstructured
 
 RUN echo "==> Adding docx2txt ..." \
-  && pip install docx2txt
+  && pip install --break-system-packages docx2txt
 
 RUN echo "==> Adding python-pptx ..." \
-  && pip install python-pptx
+  && pip install --break-system-packages python-pptx
 
 RUN echo "==> Adding openpyxl ..." \
-  && pip install openpyxl
+  && pip install --break-system-packages openpyxl
 
 COPY /Document_RAPTOR /Document_RAPTOR/
 COPY /scripts /scripts/
