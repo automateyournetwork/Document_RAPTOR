@@ -30,7 +30,7 @@ RUN echo "==> Adding networkx ..." \
   && pip install --break-system-packages networkx
 
 RUN echo "==> Adding pyvis ..." \
-  && pip install--break-system-packages pyvis
+  && pip install --break-system-packages pyvis
 
 RUN echo "==> Adding pymupdf ..." \
   && pip install --break-system-packages pymupdf
